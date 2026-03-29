@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
+import { useFloatingPosition } from '../lib/useFloatingPosition';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,6 +30,8 @@ interface SidebarProps {
   }>;
   onLogout?: () => void;
   activeView: string;
+  accentStyle?: React.CSSProperties;
+  accentSoftStyle?: React.CSSProperties;
   onViewChange: (view: string) => void;
 }
 
@@ -39,9 +42,16 @@ export default function Sidebar({
   activeTesters,
   onLogout,
   activeView,
+  accentStyle,
+  accentSoftStyle,
   onViewChange
 }: SidebarProps) {
   const isAdmin = user?.role === 'admin';
+  const collapsedToggle = useFloatingPosition(
+    'tester-pro-sidebar-toggle-position',
+    () => ({ x: 24, y: 24 }),
+    { size: 52, margin: 16 },
+  );
 
   return (
     <>
@@ -73,7 +83,7 @@ export default function Sidebar({
         {/* Header */}
         <div className="p-6 border-b border-zinc-900 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={accentStyle}>
               <Bug size={18} className="text-white" />
             </div>
             <span className="font-bold text-lg tracking-tight">Tester Pro</span>
@@ -124,6 +134,7 @@ export default function Sidebar({
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all",
                   activeView === 'dashboard' ? "bg-orange-600 text-white shadow-lg shadow-orange-900/20" : "text-zinc-400 hover:bg-zinc-900"
                 )}
+                style={activeView === 'dashboard' ? accentStyle : undefined}
               >
                 <BarChart3 size={18} />
                 My Dashboard
@@ -134,6 +145,7 @@ export default function Sidebar({
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all",
                   activeView === 'games' ? "bg-orange-600 text-white shadow-lg shadow-orange-900/20" : "text-zinc-400 hover:bg-zinc-900"
                 )}
+                style={activeView === 'games' ? accentStyle : undefined}
               >
                 <Gamepad2 size={18} />
                 Available Games
@@ -144,6 +156,7 @@ export default function Sidebar({
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all",
                   activeView === 'settings' ? "bg-orange-600 text-white shadow-lg shadow-orange-900/20" : "text-zinc-400 hover:bg-zinc-900"
                 )}
+                style={activeView === 'settings' ? accentStyle : undefined}
               >
                 <Settings size={18} />
                 Personalization
@@ -153,7 +166,7 @@ export default function Sidebar({
 
           {isAdmin && (
             <div className="px-3 py-6 mt-4 border-t border-zinc-900">
-              <h3 className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-4">Admin Console</h3>
+              <h3 className="mb-4 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--tp-accent)" }}>Admin Console</h3>
               
               <div className="space-y-1 mb-6">
                 <button 
@@ -162,6 +175,7 @@ export default function Sidebar({
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all",
                     activeView === 'admin-management' ? "bg-zinc-100 text-black shadow-lg" : "text-zinc-400 hover:bg-zinc-900"
                   )}
+                  style={activeView === 'admin-management' ? accentSoftStyle : undefined}
                 >
                   <Gamepad2 size={18} />
                   Game Management
@@ -172,6 +186,7 @@ export default function Sidebar({
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all",
                     activeView === 'admin-analytics' ? "bg-zinc-100 text-black shadow-lg" : "text-zinc-400 hover:bg-zinc-900"
                   )}
+                  style={activeView === 'admin-analytics' ? accentSoftStyle : undefined}
                 >
                   <BarChart3 size={18} />
                   System Analytics
@@ -214,8 +229,15 @@ export default function Sidebar({
       {/* Desktop Toggle Button (when closed) */}
       {!isOpen && (
         <button
-          onClick={onToggle}
-          className="fixed top-6 left-6 p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-400 shadow-xl z-40 hidden lg:flex hover:text-white transition-colors"
+          onClick={() => {
+            if (collapsedToggle.shouldSuppressClick()) {
+              return;
+            }
+            onToggle();
+          }}
+          style={collapsedToggle.floatingStyle}
+          className="fixed z-40 hidden rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-zinc-400 shadow-xl transition-colors hover:text-white lg:flex touch-none"
+          {...collapsedToggle.dragProps}
         >
           <ChevronRight size={20} />
         </button>

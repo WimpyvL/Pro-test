@@ -5,9 +5,31 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
+:root {
+  --tp-accent: #f97316;
+  --tp-accent-strong: #ea580c;
+  --tp-accent-soft: rgba(249, 115, 22, 0.16);
+  --tp-accent-shadow: rgba(249, 115, 22, 0.28);
+  --tp-panel-bg: rgba(24, 24, 27, 0.92);
+  --tp-panel-border: rgba(63, 63, 70, 0.7);
+}
+
+html[data-ui-surface="glass"] {
+  --tp-panel-bg: rgba(24, 24, 27, 0.7);
+  --tp-panel-border: rgba(113, 113, 122, 0.32);
+}
+
 @layer base {
   body {
-    @apply bg-zinc-950 text-zinc-100;
+    @apply text-zinc-100;
+    background:
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 30%),
+      linear-gradient(180deg, #09090b 0%, #050507 100%);
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  html[data-ui-density="compact"] body {
+    font-size: 15px;
   }
 
   /* Custom Scrollbar */
@@ -31,5 +53,13 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@layer components {
+  .tp-panel {
+    background: var(--tp-panel-bg);
+    border-color: var(--tp-panel-border);
+    backdrop-filter: blur(18px);
   }
 }

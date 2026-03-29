@@ -51,6 +51,16 @@ export default function AnnotationCanvas({ image, onSave, onCancel }: Annotation
     };
   }, [image]);
 
+  useEffect(() => {
+    if (!bgImage) {
+      return;
+    }
+
+    const handleResize = () => calculateDimensions(bgImage);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [bgImage]);
+
   const calculateDimensions = (img: HTMLImageElement) => {
     if (!containerRef.current) return;
     const containerWidth = containerRef.current.offsetWidth - 32;
@@ -155,165 +165,176 @@ export default function AnnotationCanvas({ image, onSave, onCancel }: Annotation
     }
   };
 
-  if (!bgImage) return <div className="flex items-center justify-center h-full bg-zinc-950 text-zinc-500">Loading editor...</div>;
+  if (!bgImage) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-4 text-sm text-zinc-400">Loading editor...</div>
+      </div>
+    );
+  }
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-[100] flex flex-col bg-zinc-950 select-none touch-none">
-      {/* Mobile Toolbar */}
-      <div className="flex flex-col border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-xl">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+      <div className="absolute inset-0" onClick={onCancel} />
+      <div ref={containerRef} className="relative flex h-[min(92vh,980px)] w-[min(96vw,1440px)] flex-col overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950 shadow-2xl select-none touch-none">
+        <div className="flex flex-col border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-xl">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-400">Annotate Report</p>
+              <p className="truncate text-xs text-zinc-500">The game stays mounted underneath this modal.</p>
+            </div>
+            <div className="ml-4 flex items-center gap-2">
+              <button onClick={() => setShapes([])} className="p-2 text-zinc-500 active:text-white"><Trash2 size={18} /></button>
+              <button onClick={onCancel} className="p-2 text-zinc-500 active:text-white"><X size={20} /></button>
+              <button 
+                onClick={handleSave}
+                className="flex h-10 items-center justify-center rounded-full bg-orange-600 px-4 text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-orange-900/40 transition-transform active:scale-90"
+              >
+                <Check size={18} className="mr-2" />
+                Save
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto px-4 pb-3 no-scrollbar">
             <ToolbarButton active={tool === 'pencil'} onClick={() => setTool('pencil')} icon={<Pencil size={18} />} />
             <ToolbarButton active={tool === 'arrow'} onClick={() => setTool('arrow')} icon={<ArrowRight size={18} />} />
             <ToolbarButton active={tool === 'rect'} onClick={() => setTool('rect')} icon={<Square size={18} />} />
             <ToolbarButton active={tool === 'text'} onClick={() => setTool('text')} icon={<Type size={18} />} />
-            <div className="w-px h-6 bg-zinc-800 mx-1 shrink-0" />
+            <div className="mx-1 h-6 w-px shrink-0 bg-zinc-800" />
             <div className="flex gap-1">
               {['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#ffffff'].map(c => (
                 <button 
                   key={c}
                   onClick={() => setColor(c)}
                   className={cn(
-                    "w-6 h-6 rounded-full border-2 transition-transform active:scale-125",
-                    color === c ? "border-white scale-110" : "border-transparent"
+                    "h-6 w-6 rounded-full border-2 transition-transform active:scale-125",
+                    color === c ? "scale-110 border-white" : "border-transparent"
                   )}
                   style={{ backgroundColor: c }}
                 />
               ))}
             </div>
           </div>
-          
-          <div className="flex items-center gap-2 ml-4">
-            <button onClick={() => setShapes([])} className="p-2 text-zinc-500 active:text-white"><Trash2 size={18} /></button>
-            <button onClick={onCancel} className="p-2 text-zinc-500 active:text-white"><X size={20} /></button>
-            <button 
-              onClick={handleSave}
-              className="w-10 h-10 bg-orange-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-orange-900/40 active:scale-90 transition-transform"
+
+          {tool === 'text' && (
+            <div className="flex items-center gap-4 overflow-x-auto border-t border-zinc-800/50 bg-black/20 px-6 py-2 no-scrollbar">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Font</span>
+                <select 
+                  value={fontFamily} 
+                  onChange={(e) => setFontFamily(e.target.value)}
+                  className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-white outline-none"
+                >
+                  <option value="Inter">Sans</option>
+                  <option value="Georgia">Serif</option>
+                  <option value="JetBrains Mono">Mono</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Size</span>
+                <select 
+                  value={fontSize} 
+                  onChange={(e) => setFontSize(Number(e.target.value))}
+                  className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-white outline-none"
+                >
+                  {[12, 16, 20, 24, 32, 48, 64].map(size => (
+                    <option key={size} value={size}>{size}px</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                <button 
+                  onClick={() => setIsBold(!isBold)}
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded border text-xs font-bold transition-colors",
+                    isBold ? "border-orange-600 bg-orange-600 text-white" : "border-zinc-700 bg-zinc-800 text-zinc-400"
+                  )}
+                >
+                  B
+                </button>
+                <button 
+                  onClick={() => setIsItalic(!isItalic)}
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded border text-xs italic transition-colors",
+                    isItalic ? "border-orange-600 bg-orange-600 text-white" : "border-zinc-700 bg-zinc-800 text-zinc-400"
+                  )}
+                >
+                  I
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(#27272a_1px,transparent_1px)] p-4 [background-size:20px_20px]">
+          <div className="overflow-hidden rounded-lg border border-zinc-800 bg-black shadow-2xl">
+            <Stage
+              width={dimensions.width}
+              height={dimensions.height}
+              scaleX={dimensions.scale}
+              scaleY={dimensions.scale}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onTouchStart={handleMouseDown}
+              onTouchMove={handleMouseMove}
+              onTouchEnd={handleMouseUp}
+              ref={stageRef}
             >
-              <Check size={20} />
-            </button>
+              <Layer>
+                <KonvaImage image={bgImage} />
+                {shapes.map((shape) => {
+                  if (shape.type === 'pencil') {
+                    return <Line key={shape.id} points={shape.points} stroke={shape.color} strokeWidth={4} tension={0.5} lineCap="round" lineJoin="round" />;
+                  }
+                  if (shape.type === 'arrow') {
+                    return <Arrow key={shape.id} points={[shape.x!, shape.y!, shape.x! + shape.width!, shape.y! + shape.height!]} stroke={shape.color} fill={shape.color} strokeWidth={4} pointerLength={10} pointerWidth={10} />;
+                  }
+                  if (shape.type === 'rect') {
+                    return <Rect key={shape.id} x={shape.x} y={shape.y} width={shape.width} height={shape.height} stroke={shape.color} strokeWidth={4} />;
+                  }
+                  if (shape.type === 'text') {
+                    const isSelected = selectedId === shape.id;
+                    return (
+                      <KonvaText 
+                        key={shape.id} 
+                        x={shape.x} 
+                        y={shape.y} 
+                        text={shape.text} 
+                        fontSize={shape.fontSize || 24} 
+                        fontFamily={shape.fontFamily || 'Inter'}
+                        fill={shape.color} 
+                        fontStyle={shape.fontStyle || 'bold'} 
+                        stroke="black"
+                        strokeWidth={0.5}
+                        draggable 
+                        onClick={(e) => {
+                          e.cancelBubble = true;
+                          setSelectedId(shape.id);
+                          setEditingId(shape.id);
+                        }}
+                        onTap={(e) => {
+                          e.cancelBubble = true;
+                          setSelectedId(shape.id);
+                          setEditingId(shape.id);
+                        }}
+                        onDragStart={() => setSelectedId(shape.id)}
+                        shadowColor="black"
+                        shadowBlur={2}
+                        shadowOpacity={0.5}
+                        opacity={isSelected ? 0.8 : 1}
+                      />
+                    );
+                  }
+                  return null;
+                })}
+              </Layer>
+            </Stage>
           </div>
         </div>
-
-        {/* Text Tool Sub-toolbar */}
-        {tool === 'text' && (
-          <div className="flex items-center gap-4 px-6 py-2 border-t border-zinc-800/50 bg-black/20 overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Font</span>
-              <select 
-                value={fontFamily} 
-                onChange={(e) => setFontFamily(e.target.value)}
-                className="bg-zinc-800 text-white text-xs rounded px-2 py-1 outline-none border border-zinc-700"
-              >
-                <option value="Inter">Sans</option>
-                <option value="Georgia">Serif</option>
-                <option value="JetBrains Mono">Mono</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Size</span>
-              <select 
-                value={fontSize} 
-                onChange={(e) => setFontSize(Number(e.target.value))}
-                className="bg-zinc-800 text-white text-xs rounded px-2 py-1 outline-none border border-zinc-700"
-              >
-                {[12, 16, 20, 24, 32, 48, 64].map(size => (
-                  <option key={size} value={size}>{size}px</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-1 shrink-0">
-              <button 
-                onClick={() => setIsBold(!isBold)}
-                className={cn(
-                  "w-8 h-8 rounded flex items-center justify-center text-xs font-bold border transition-colors",
-                  isBold ? "bg-orange-600 border-orange-600 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400"
-                )}
-              >
-                B
-              </button>
-              <button 
-                onClick={() => setIsItalic(!isItalic)}
-                className={cn(
-                  "w-8 h-8 rounded flex items-center justify-center text-xs italic border transition-colors",
-                  isItalic ? "bg-orange-600 border-orange-600 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400"
-                )}
-              >
-                I
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Canvas Area */}
-      <div className="flex-1 flex items-center justify-center p-4 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:20px_20px]">
-        <div className="shadow-2xl border border-zinc-800 bg-black overflow-hidden rounded-lg">
-          <Stage
-            width={dimensions.width}
-            height={dimensions.height}
-            scaleX={dimensions.scale}
-            scaleY={dimensions.scale}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onTouchStart={handleMouseDown}
-            onTouchMove={handleMouseMove}
-            onTouchEnd={handleMouseUp}
-            ref={stageRef}
-          >
-            <Layer>
-              <KonvaImage image={bgImage} />
-              {shapes.map((shape) => {
-                if (shape.type === 'pencil') {
-                  return <Line key={shape.id} points={shape.points} stroke={shape.color} strokeWidth={4} tension={0.5} lineCap="round" lineJoin="round" />;
-                }
-                if (shape.type === 'arrow') {
-                  return <Arrow key={shape.id} points={[shape.x!, shape.y!, shape.x! + shape.width!, shape.y! + shape.height!]} stroke={shape.color} fill={shape.color} strokeWidth={4} pointerLength={10} pointerWidth={10} />;
-                }
-                if (shape.type === 'rect') {
-                  return <Rect key={shape.id} x={shape.x} y={shape.y} width={shape.width} height={shape.height} stroke={shape.color} strokeWidth={4} />;
-                }
-                if (shape.type === 'text') {
-                  const isSelected = selectedId === shape.id;
-                  return (
-                    <KonvaText 
-                      key={shape.id} 
-                      x={shape.x} 
-                      y={shape.y} 
-                      text={shape.text} 
-                      fontSize={shape.fontSize || 24} 
-                      fontFamily={shape.fontFamily || 'Inter'}
-                      fill={shape.color} 
-                      fontStyle={shape.fontStyle || 'bold'} 
-                      stroke="black"
-                      strokeWidth={0.5}
-                      draggable 
-                      onClick={(e) => {
-                        e.cancelBubble = true;
-                        setSelectedId(shape.id);
-                        setEditingId(shape.id);
-                      }}
-                      onTap={(e) => {
-                        e.cancelBubble = true;
-                        setSelectedId(shape.id);
-                        setEditingId(shape.id);
-                      }}
-                      onDragStart={() => setSelectedId(shape.id)}
-                      shadowColor="black"
-                      shadowBlur={2}
-                      shadowOpacity={0.5}
-                      opacity={isSelected ? 0.8 : 1}
-                    />
-                  );
-                }
-                return null;
-              })}
-            </Layer>
-          </Stage>
-        </div>
-      </div>
-      {/* Text Editor Overlay */}
       {editingId && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm p-6">
           <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl">
