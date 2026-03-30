@@ -1,40 +1,36 @@
 # Pro-test Encore Backend
 
-This backend owns:
+This folder contains the Encore backend for Pro-test.
 
-- session cookies
-- users and roles
-- game catalog management
-- bug report persistence
+It owns:
 
-Run it locally with:
+- auth verification against Clerk
+- local user/session synchronization
+- game catalog APIs
+- bug report APIs
+- SQL persistence
+- object storage for report images
+
+## Local Run
 
 ```bash
 encore run
 ```
 
-Validate the backend shape with:
+## Validation
 
 ```bash
 encore check
+npx tsc --noEmit
 ```
 
-## Cloud deployment notes
-
-Environment:
+## Required Secrets
 
 ```bash
 CLERK_SECRET_KEY=sk_...
-CORS_ALLOWED_ORIGINS=https://app.yourdomain.com
+CORS_ALLOWED_ORIGINS=https://your-frontend-domain
 ```
 
-If the frontend is reverse-proxied through the same origin, you do not need cross-origin browser access.
-If the frontend calls the backend directly from another origin, set `CORS_ALLOWED_ORIGINS` to a comma-separated allowlist.
+## Deployment
 
-Recommended production layout:
-
-- frontend: `https://yourdomain.com`
-- encore backend: internal/private service
-- reverse proxy: expose backend under `https://yourdomain.com/api`
-
-In that layout the frontend should use `VITE_API_BASE_URL=/api`.
+See the full deployment guide in [docs/DEPLOYMENT.md](C:\Git Repos\protest\docs\DEPLOYMENT.md).

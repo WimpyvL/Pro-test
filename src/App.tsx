@@ -6,7 +6,7 @@ import { SignIn, UserButton, useAuth, useClerk, useUser } from "@clerk/clerk-rea
 
 import GameTester from "./components/GameTester";
 import Sidebar from "./components/Sidebar";
-import { backend, setAuthTokenGetter, type ActiveTester, type BugReport, type Game, type ReportPriority, type UserProfile } from "./lib/api";
+import { backend, setAuthTokenGetter, type ActiveTester, type BugReport, type Game, type ReportPriority, type TesterInsight, type UserProfile } from "./lib/api";
 import { type UiPreferences, useUiPreferences } from "./lib/useUiPreferences";
 import { cn } from "./lib/utils";
 
@@ -53,6 +53,7 @@ function AuthenticatedApp() {
   const [games, setGames] = useState<Game[]>([]);
   const [reports, setReports] = useState<BugReport[]>([]);
   const [activeTesters, setActiveTesters] = useState<ActiveTester[]>([]);
+  const [testerInsights, setTesterInsights] = useState<TesterInsight[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(preferences.sidebarDefaultOpen);
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
@@ -71,6 +72,7 @@ function AuthenticatedApp() {
       setGames([]);
       setReports([]);
       setActiveTesters([]);
+      setTesterInsights([]);
       return;
     }
 
@@ -85,10 +87,15 @@ function AuthenticatedApp() {
     setReports(reportsResponse.reports);
 
     if (profile.role === "admin") {
-      const { testers } = await backend.activeTesters();
+      const [{ testers }, { testers: insights }] = await Promise.all([
+        backend.activeTesters(),
+        backend.listTesterInsights(),
+      ]);
       setActiveTesters(testers);
+      setTesterInsights(insights);
     } else {
       setActiveTesters([]);
+      setTesterInsights([]);
     }
   }
 
@@ -105,7 +112,12 @@ function AuthenticatedApp() {
     }
 
     const timer = window.setInterval(() => {
-      void backend.activeTesters().then(({ testers }) => setActiveTesters(testers)).catch(() => undefined);
+      void Promise.all([backend.activeTesters(), backend.listTesterInsights()])
+        .then(([{ testers }, { testers: insights }]) => {
+          setActiveTesters(testers);
+          setTesterInsights(insights);
+        })
+        .catch(() => undefined);
     }, 30000);
 
     return () => window.clearInterval(timer);
@@ -139,8 +151,9 @@ function AuthenticatedApp() {
   }
 
   async function handleCreateReport(input: {
-    image: string;
+    image?: string | null;
     annotatedImage: string | null;
+    video?: string | null;
     title: string;
     description: string;
     gameTitle?: string | null;
@@ -166,6 +179,13 @@ function AuthenticatedApp() {
     await backend.deleteReport(reportId);
     setReports((current) => current.filter((entry) => entry.id !== reportId));
     await refreshProfile();
+  }
+
+  async function handleCreateReportMessage(reportId: string, body: string) {
+    const { report } = await backend.createReportMessage(reportId, { body });
+    setReports((current) => current.map((entry) => (entry.id === report.id ? report : entry)));
+    await refreshProfile();
+    return report;
   }
 
   if (!isLoaded) {
@@ -244,12 +264,12 @@ function AuthenticatedApp() {
           )}
           {activeView === "admin-management" && sessionUser.role === "admin" && (
             <motion.div key="admin-management" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-8">
-              <AdminDashboard activeTesters={activeTesters} games={games} bugs={reports} gameMetrics={gameMetrics} initialTab="management" onAddGame={handleAddGame} onDeleteGame={handleDeleteGame} onUpdateReport={handleUpdateReport} />
+              <AdminDashboard activeTesters={activeTesters} testerInsights={testerInsights} games={games} bugs={reports} gameMetrics={gameMetrics} initialTab="management" onAddGame={handleAddGame} onDeleteGame={handleDeleteGame} onUpdateReport={handleUpdateReport} onCreateReportMessage={handleCreateReportMessage} />
             </motion.div>
           )}
           {activeView === "admin-analytics" && sessionUser.role === "admin" && (
             <motion.div key="admin-analytics" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-8">
-              <AdminDashboard activeTesters={activeTesters} games={games} bugs={reports} gameMetrics={gameMetrics} initialTab="analytics" onAddGame={handleAddGame} onDeleteGame={handleDeleteGame} onUpdateReport={handleUpdateReport} />
+              <AdminDashboard activeTesters={activeTesters} testerInsights={testerInsights} games={games} bugs={reports} gameMetrics={gameMetrics} initialTab="analytics" onAddGame={handleAddGame} onDeleteGame={handleDeleteGame} onUpdateReport={handleUpdateReport} onCreateReportMessage={handleCreateReportMessage} />
             </motion.div>
           )}
           {activeView === "games" && (
@@ -263,7 +283,7 @@ function AuthenticatedApp() {
           )}
           {activeView === "testing" && selectedGame && (
             <motion.div key="testing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
-              <GameTester currentUser={sessionUser} initialGame={selectedGame} reports={reports} onCreateReport={handleCreateReport} onDeleteReport={handleDeleteReport} onUpdateReport={handleUpdateReport} />
+              <GameTester currentUser={sessionUser} initialGame={selectedGame} reports={reports} onCreateReport={handleCreateReport} onDeleteReport={handleDeleteReport} onUpdateReport={handleUpdateReport} onCreateReportMessage={handleCreateReportMessage} />
             </motion.div>
           )}
           {activeView === "settings" && (
@@ -405,32 +425,46 @@ function TesterDashboard({ reports, allReports }: { reports: BugReport[]; allRep
   );
 }
 
-function AdminDashboard({ activeTesters, games, bugs, gameMetrics, initialTab, onAddGame, onDeleteGame, onUpdateReport }: { activeTesters: ActiveTester[]; games: Game[]; bugs: BugReport[]; gameMetrics: Record<string, GameMetric>; initialTab: "management" | "analytics"; onAddGame: (game: { title: string; url: string; description: string }) => Promise<void>; onDeleteGame: (gameId: string) => Promise<void>; onUpdateReport: (reportId: string, updates: { title?: string; description?: string; status?: "open" | "pending" | "fixed"; priority?: ReportPriority; adminNotes?: string; annotatedImage?: string | null }) => Promise<BugReport>; }) {
+function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetrics, initialTab, onAddGame, onDeleteGame, onUpdateReport, onCreateReportMessage }: { activeTesters: ActiveTester[]; testerInsights: TesterInsight[]; games: Game[]; bugs: BugReport[]; gameMetrics: Record<string, GameMetric>; initialTab: "management" | "analytics"; onAddGame: (game: { title: string; url: string; description: string }) => Promise<void>; onDeleteGame: (gameId: string) => Promise<void>; onUpdateReport: (reportId: string, updates: { title?: string; description?: string; status?: "open" | "pending" | "fixed"; priority?: ReportPriority; adminNotes?: string; annotatedImage?: string | null }) => Promise<BugReport>; onCreateReportMessage: (reportId: string, body: string) => Promise<BugReport>; }) {
   const [newGame, setNewGame] = useState({ title: "", url: "", description: "" });
   const [isAdding, setIsAdding] = useState(false);
   const [isSavingGame, setIsSavingGame] = useState(false);
   const [selectedBugId, setSelectedBugId] = useState<string | null>(bugs[0]?.id ?? null);
+  const [selectedTesterId, setSelectedTesterId] = useState<string | null>(testerInsights[0]?.id ?? null);
   const [draftAdminNotes, setDraftAdminNotes] = useState("");
+  const [draftReply, setDraftReply] = useState("");
   const [isSavingBug, setIsSavingBug] = useState(false);
   const activeTab = initialTab;
   const selectedBug = bugs.find((bug) => bug.id === selectedBugId) ?? bugs[0] ?? null;
+  const selectedTester = testerInsights.find((tester) => tester.id === selectedTesterId) ?? testerInsights[0] ?? null;
   const intakeBugs = [...bugs].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
   const statusData = [{ name: "Open", value: bugs.filter((bug) => bug.status === "open").length, color: "#ef4444" }, { name: "Pending", value: bugs.filter((bug) => bug.status === "pending").length, color: "#f59e0b" }, { name: "Fixed", value: bugs.filter((bug) => bug.status === "fixed").length, color: "#10b981" }].filter((entry) => entry.value > 0);
   const bugsByDate = bugs.reduce<Record<string, number>>((acc, bug) => { const date = new Date(bug.timestamp).toLocaleDateString(); acc[date] = (acc[date] || 0) + 1; return acc; }, {});
   const timelineData = Object.entries(bugsByDate).map(([date, count]) => ({ date, count })).slice(-7);
-  const testerStats = bugs.reduce<Record<string, number>>((acc, bug) => { acc[bug.authorName] = (acc[bug.authorName] || 0) + 1; return acc; }, {});
-  const topTestersData = Object.entries(testerStats).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5);
+  const topTestersData = testerInsights
+    .map((tester) => ({ name: tester.name, count: Math.round(tester.totalPlaySeconds / 60) }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
   const avgFixHours = average(Object.values(gameMetrics), (metric) => metric.avgFixHours ?? 0, (metric) => metric.avgFixHours !== null);
   const highPriorityOpen = bugs.filter((bug) => bug.priority === "high" && bug.status !== "fixed").length;
   const staleBacklog = bugs.filter((bug) => bug.status !== "fixed" && Date.now() - bug.timestamp > 1000 * 60 * 60 * 48).length;
   const gameHealthData = games.map((game) => ({ name: game.title, open: gameMetrics[game.id]?.openReports ?? 0, fixed: gameMetrics[game.id]?.fixedReports ?? 0, total: gameMetrics[game.id]?.totalReports ?? 0, avgFixHours: gameMetrics[game.id]?.avgFixHours ?? 0 })).sort((a, b) => b.total - a.total);
+  const totalPlaySeconds = testerInsights.reduce((total, tester) => total + tester.totalPlaySeconds, 0);
+  const avgSessionSeconds = average(testerInsights, (tester) => tester.avgSessionSeconds ?? 0, (tester) => tester.avgSessionSeconds !== null);
+  const onlineTesterCount = testerInsights.filter((tester) => tester.isOnline).length;
   useEffect(() => {
     if (!selectedBugId && bugs[0]) {
       setSelectedBugId(bugs[0].id);
     }
   }, [bugs, selectedBugId]);
   useEffect(() => {
+    if (!selectedTesterId && testerInsights[0]) {
+      setSelectedTesterId(testerInsights[0].id);
+    }
+  }, [selectedTesterId, testerInsights]);
+  useEffect(() => {
     setDraftAdminNotes(selectedBug?.adminNotes ?? "");
+    setDraftReply("");
   }, [selectedBug?.adminNotes, selectedBug?.id]);
   async function submitGame(e: React.FormEvent) { e.preventDefault(); setIsSavingGame(true); try { await onAddGame(newGame); setNewGame({ title: "", url: "", description: "" }); setIsAdding(false); } finally { setIsSavingGame(false); } }
   async function saveBugUpdates(updates: { status?: "open" | "pending" | "fixed"; priority?: ReportPriority; adminNotes?: string }) {
@@ -441,6 +475,20 @@ function AdminDashboard({ activeTesters, games, bugs, gameMetrics, initialTab, o
     try {
       const report = await onUpdateReport(selectedBug.id, updates);
       setSelectedBugId(report.id);
+      setDraftAdminNotes(report.adminNotes);
+    } finally {
+      setIsSavingBug(false);
+    }
+  }
+  async function sendBugReply() {
+    if (!selectedBug || !draftReply.trim()) {
+      return;
+    }
+    setIsSavingBug(true);
+    try {
+      const report = await onCreateReportMessage(selectedBug.id, draftReply);
+      setSelectedBugId(report.id);
+      setDraftReply("");
       setDraftAdminNotes(report.adminNotes);
     } finally {
       setIsSavingBug(false);
@@ -488,7 +536,15 @@ function AdminDashboard({ activeTesters, games, bugs, gameMetrics, initialTab, o
                   <div className="space-y-6">
                     <div className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
                       <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950">
-                        <img src={selectedBug.annotatedImage || selectedBug.image} alt={selectedBug.title} className="aspect-video w-full object-contain" />
+                        {selectedBug.video ? (
+                          <video src={selectedBug.video} className="aspect-video w-full object-contain" controls preload="metadata" />
+                        ) : selectedBug.annotatedImage || selectedBug.image ? (
+                          <img src={selectedBug.annotatedImage || selectedBug.image || ""} alt={selectedBug.title} className="aspect-video w-full object-contain" />
+                        ) : (
+                          <div className="flex aspect-video w-full items-center justify-center bg-zinc-950 text-sm text-zinc-500">
+                            No screenshot attached.
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-4">
                         <div>
@@ -526,13 +582,34 @@ function AdminDashboard({ activeTesters, games, bugs, gameMetrics, initialTab, o
                       </FormField>
                     </div>
 
-                    <FormField label="Admin Feedback">
-                      <textarea value={draftAdminNotes} onChange={(e) => setDraftAdminNotes(e.target.value)} className="h-40 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" placeholder="Tell the tester what you found, what you need, or what changed." />
-                    </FormField>
-                    <div className="flex justify-end">
-                      <button onClick={() => void saveBugUpdates({ adminNotes: draftAdminNotes })} disabled={isSavingBug} className="rounded-2xl bg-orange-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-orange-900/20 disabled:opacity-70">
-                        {isSavingBug ? "Saving..." : "Save Feedback"}
-                      </button>
+                    <div className="space-y-4">
+                      <FormField label="Latest Admin Summary">
+                        <textarea value={draftAdminNotes} onChange={(e) => setDraftAdminNotes(e.target.value)} className="h-24 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" placeholder="Short summary shown in dashboards and queue cards." />
+                      </FormField>
+                      <FormField label="Conversation">
+                        <div className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                          {selectedBug.messages.length > 0 ? selectedBug.messages.map((message) => (
+                            <div key={message.id} className={cn("rounded-2xl px-4 py-3 text-sm leading-relaxed", message.authorRole === "admin" ? "border border-orange-500/20 bg-orange-500/8 text-zinc-200" : "border border-zinc-800 bg-zinc-900 text-zinc-300")}>
+                              <div className="mb-2 flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-widest">
+                                <span className={message.authorRole === "admin" ? "text-orange-400" : "text-zinc-400"}>{message.authorName}</span>
+                                <span className="text-zinc-600">{new Date(message.createdAt).toLocaleString()}</span>
+                              </div>
+                              <p className="whitespace-pre-wrap">{message.body}</p>
+                            </div>
+                          )) : <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900 px-4 py-4 text-sm text-zinc-500">No messages yet.</div>}
+                        </div>
+                      </FormField>
+                      <FormField label="Reply">
+                        <textarea value={draftReply} onChange={(e) => setDraftReply(e.target.value)} className="h-32 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" placeholder="Reply to the tester without overwriting the ticket." />
+                      </FormField>
+                      <div className="flex justify-between gap-3">
+                        <button onClick={() => void saveBugUpdates({ adminNotes: draftAdminNotes })} disabled={isSavingBug} className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-3 text-sm font-bold text-zinc-300 disabled:opacity-70">
+                          {isSavingBug ? "Saving..." : "Save Summary"}
+                        </button>
+                        <button onClick={() => void sendBugReply()} disabled={isSavingBug || !draftReply.trim()} className="rounded-2xl bg-orange-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-orange-900/20 disabled:opacity-70">
+                          {isSavingBug ? "Sending..." : "Send Reply"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -546,9 +623,101 @@ function AdminDashboard({ activeTesters, games, bugs, gameMetrics, initialTab, o
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div className="space-y-12 lg:col-span-2">
               <section><h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-zinc-500">Manage Games ({games.length})</h2><div className="space-y-4">{games.map((game) => { const metrics = gameMetrics[game.id] ?? emptyGameMetric(); return <div key={game.id} className="group rounded-3xl border border-zinc-800 bg-zinc-900 p-6"><div className="flex items-start justify-between gap-4"><div className="flex items-start gap-4"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-800 text-zinc-500"><Gamepad2 size={24} /></div><div><p className="font-bold">{game.title}</p><p className="max-w-[240px] truncate text-xs text-zinc-500">{game.url}</p><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"><MetricTile label="Reports" value={metrics.totalReports} accent="text-zinc-100" /><MetricTile label="Open" value={metrics.openReports} accent="text-red-400" /><MetricTile label="High" value={metrics.highPriorityReports} accent="text-orange-400" /><MetricTile label="Avg Fix" value={formatFixHours(metrics.avgFixHours)} accent="text-cyan-400" compact /></div></div></div><button onClick={() => void onDeleteGame(game.id)} className="rounded-xl p-3 text-zinc-600 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"><Trash2 size={18} /></button></div></div>; })}</div></section>
-              <section><h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-zinc-500">Active Testers ({activeTesters.length})</h2><div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{activeTesters.map((tester) => <div key={tester.id} className="flex items-center gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800"><Users size={20} className="text-zinc-500" /></div><div><p className="text-sm font-bold">{tester.name}</p><p className="text-[10px] font-bold uppercase text-green-500">Online</p></div></div>)}</div></section>
+              <section>
+                <h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-zinc-500">Tester Intel ({testerInsights.length})</h2>
+                <div className="grid gap-6 xl:grid-cols-[0.95fr_1.35fr]">
+                  <div className="space-y-3">
+                    {testerInsights.map((tester) => (
+                      <button
+                        key={tester.id}
+                        type="button"
+                        onClick={() => setSelectedTesterId(tester.id)}
+                        className={cn(
+                          "w-full rounded-3xl border p-4 text-left transition-colors",
+                          selectedTester?.id === tester.id ? "border-orange-600 bg-orange-600/10" : "border-zinc-800 bg-zinc-900 hover:bg-zinc-800/70",
+                        )}
+                      >
+                        <div className="mb-3 flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-bold">{tester.name}</p>
+                            <p className="mt-1 text-xs text-zinc-500">{tester.email}</p>
+                          </div>
+                          <span className={cn("rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest", tester.isOnline ? "bg-green-500/15 text-green-300" : "bg-zinc-800 text-zinc-400")}>
+                            {tester.isOnline ? "Online" : "Offline"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                          <MetricTile label="Play Time" value={formatPlayTime(tester.totalPlaySeconds)} accent="text-cyan-400" compact />
+                          <MetricTile label="Sessions" value={tester.totalSessions} accent="text-zinc-100" compact />
+                          <MetricTile label="Games" value={tester.gamesPlayedCount} accent="text-violet-300" compact />
+                          <MetricTile label="Reports" value={tester.totalReports} accent="text-orange-400" compact />
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-500">
+                          <span>{tester.currentGameTitle ? `Playing ${tester.currentGameTitle}` : "Not currently in a game"}</span>
+                          <span>{formatRelativeDate(tester.lastSeen)}</span>
+                        </div>
+                      </button>
+                    ))}
+                    {testerInsights.length === 0 && <div className="rounded-3xl border border-dashed border-zinc-800 bg-zinc-950 p-8 text-sm text-zinc-500">No tester telemetry yet. Once testers open games, this fills in.</div>}
+                  </div>
+                  <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
+                    {selectedTester ? (
+                      <div className="space-y-6">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <h3 className="text-2xl font-bold">{selectedTester.name}</h3>
+                            <p className="mt-1 text-sm text-zinc-500">{selectedTester.email}</p>
+                            <p className="mt-3 text-xs uppercase tracking-widest text-zinc-600">{selectedTester.currentGameTitle ? `Currently playing ${selectedTester.currentGameTitle}` : "No active game session"}</p>
+                          </div>
+                          <div className="text-right text-xs text-zinc-500">
+                            <p>Last seen</p>
+                            <p className="mt-1 text-sm text-zinc-200">{formatDateTime(selectedTester.lastSeen)}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                          <MetricTile label="Total Play" value={formatPlayTime(selectedTester.totalPlaySeconds)} accent="text-cyan-400" compact />
+                          <MetricTile label="Avg Session" value={formatPlayTime(selectedTester.avgSessionSeconds)} accent="text-blue-300" compact />
+                          <MetricTile label="Open Bugs" value={selectedTester.openReports + selectedTester.pendingReports} accent="text-red-400" compact />
+                          <MetricTile label="Fixed" value={selectedTester.fixedReports} accent="text-green-400" compact />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                          <InlineInsight label="Sessions" value={selectedTester.totalSessions} />
+                          <InlineInsight label="Games Played" value={selectedTester.gamesPlayedCount} />
+                          <InlineInsight label="High Priority Filed" value={selectedTester.highPriorityReports} />
+                          <InlineInsight label="Last Game Activity" value={selectedTester.lastPlayedAt ? formatRelativeDate(selectedTester.lastPlayedAt) : "No play yet"} />
+                        </div>
+                        <div>
+                          <h4 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500">Per-Game Breakdown</h4>
+                          <div className="space-y-3">
+                            {selectedTester.games.map((game) => (
+                              <div key={game.gameId} className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div>
+                                    <p className="font-bold">{game.gameTitle}</p>
+                                    <p className="mt-1 truncate text-xs text-zinc-500">{game.gameUrl}</p>
+                                  </div>
+                                  <span className="text-xs text-zinc-500">{game.lastPlayedAt ? formatRelativeDate(game.lastPlayedAt) : "Never"}</span>
+                                </div>
+                                <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                                  <MetricTile label="Play Time" value={formatPlayTime(game.totalPlaySeconds)} accent="text-cyan-400" compact />
+                                  <MetricTile label="Sessions" value={game.sessionCount} accent="text-zinc-100" compact />
+                                  <MetricTile label="Reports" value={game.reportsFiled} accent="text-orange-400" compact />
+                                  <MetricTile label="Avg Session" value={formatPlayTime(game.sessionCount > 0 ? Math.round(game.totalPlaySeconds / game.sessionCount) : null)} accent="text-blue-300" compact />
+                                </div>
+                              </div>
+                            ))}
+                            {selectedTester.games.length === 0 && <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950 px-4 py-6 text-sm text-zinc-500">This tester has not opened any tracked games yet.</div>}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-3xl border border-dashed border-zinc-800 bg-zinc-950 p-12 text-center text-zinc-500">Select a tester to inspect activity.</div>
+                    )}
+                  </div>
+                </div>
+              </section>
             </div>
-            <div><div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6"><h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500">System Health</h2><div className="space-y-4"><HealthRow label="Total Testers" value={activeTesters.length + 1} /><HealthRow label="Active Sessions" value="Live" accent="text-green-500" /><HealthRow label="Total Bugs" value={bugs.length} accent="text-orange-500" /></div></div></div>
+            <div><div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6"><h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-zinc-500">System Health</h2><div className="space-y-4"><HealthRow label="Total Testers" value={testerInsights.length} /><HealthRow label="Active Sessions" value={onlineTesterCount} accent="text-green-500" /><HealthRow label="Total Bugs" value={bugs.length} accent="text-orange-500" /></div></div></div>
           </div>
         </div>
       ) : (
@@ -559,12 +728,15 @@ function AdminDashboard({ activeTesters, games, bugs, gameMetrics, initialTab, o
             <AnalyticsCard icon={<Gamepad2 size={20} />} label="Active Games" value={games.length} accent="text-blue-500" />
             <AnalyticsCard icon={<Clock3 size={20} />} label="Avg Fix Time" value={formatFixHours(avgFixHours)} accent="text-cyan-400" />
             <AnalyticsCard icon={<Bug size={20} />} label="High Priority Open" value={highPriorityOpen} accent="text-red-400" />
+            <AnalyticsCard icon={<Users size={20} />} label="Online Testers" value={onlineTesterCount} accent="text-emerald-400" />
+            <AnalyticsCard icon={<Clock3 size={20} />} label="Total Play Time" value={formatPlayTime(totalPlaySeconds)} accent="text-sky-400" />
+            <AnalyticsCard icon={<Activity size={20} />} label="Avg Play Session" value={formatPlayTime(avgSessionSeconds)} accent="text-violet-400" />
             <AnalyticsCard icon={<MessageSquareText size={20} />} label="Stale Backlog" value={staleBacklog} accent="text-amber-400" />
           </div>
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <ChartCard title="Report Timeline" icon={<BarChart3 size={20} className="text-orange-500" />}><ResponsiveContainer width="100%" height="100%"><AreaChart data={timelineData}><defs><linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f97316" stopOpacity={0.3} /><stop offset="95%" stopColor="#f97316" stopOpacity={0} /></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} /><XAxis dataKey="date" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} /><YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} /><Tooltip contentStyle={{ backgroundColor: "#18181b", border: "1px solid #27272a", borderRadius: "12px" }} /><Area type="monotone" dataKey="count" stroke="#f97316" strokeWidth={3} fill="url(#colorCount)" /></AreaChart></ResponsiveContainer></ChartCard>
             <ChartCard title="Status Distribution" icon={<Bug size={20} className="text-orange-500" />}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={statusData} dataKey="value" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5}>{statusData.map((entry, index) => <Cell key={`status-${index}`} fill={entry.color} />)}</Pie><Tooltip contentStyle={{ backgroundColor: "#18181b", border: "1px solid #27272a", borderRadius: "12px" }} /></PieChart></ResponsiveContainer></ChartCard>
-            <ChartCard title="Top Performing Testers" icon={<Users size={20} className="text-orange-500" />} className="lg:col-span-2"><ResponsiveContainer width="100%" height="100%"><BarChart data={topTestersData}><CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} /><XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} /><YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} /><Tooltip contentStyle={{ backgroundColor: "#18181b", border: "1px solid #27272a", borderRadius: "12px" }} /><Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></ChartCard>
+            <ChartCard title="Most Engaged Testers (Minutes Played)" icon={<Users size={20} className="text-orange-500" />} className="lg:col-span-2"><ResponsiveContainer width="100%" height="100%"><BarChart data={topTestersData}><CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} /><XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} /><YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} /><Tooltip contentStyle={{ backgroundColor: "#18181b", border: "1px solid #27272a", borderRadius: "12px" }} /><Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></ChartCard>
             <ChartCard title="Game Health" icon={<Gamepad2 size={20} className="text-orange-500" />} className="lg:col-span-2"><ResponsiveContainer width="100%" height="100%"><BarChart data={gameHealthData}><CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} /><XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} /><YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} /><Tooltip contentStyle={{ backgroundColor: "#18181b", border: "1px solid #27272a", borderRadius: "12px" }} /><Bar dataKey="open" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} /><Bar dataKey="fixed" stackId="a" fill="#10b981" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></ChartCard>
           </div>
         </div>
@@ -716,6 +888,44 @@ function formatFixHours(hours: number | null) {
     return `${hours.toFixed(1)}h`;
   }
   return `${(hours / 24).toFixed(1)}d`;
+}
+
+function formatPlayTime(seconds: number | null) {
+  if (seconds === null || Number.isNaN(seconds) || seconds <= 0) {
+    return "0m";
+  }
+
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.round((seconds % 3600) / 60);
+
+  if (hours === 0) {
+    return `${minutes}m`;
+  }
+
+  if (hours < 24) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return `${days}d ${remainingHours}h`;
+}
+
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString();
+}
+
+function formatRelativeDate(value: string) {
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) {
+    return "Unknown";
+  }
+
+  return formatRelativeTimestamp(timestamp);
 }
 
 function average<T>(items: T[], valueOf: (item: T) => number, include: (item: T) => boolean) {

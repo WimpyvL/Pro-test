@@ -1,0 +1,2 @@
+ALTER TABLE reports
+ALTER COLUMN image DROP NOT NULL;

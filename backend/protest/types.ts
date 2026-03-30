@@ -1,6 +1,7 @@
 export type UserRole = "admin" | "tester";
 export type ReportStatus = "open" | "pending" | "fixed";
 export type ReportPriority = "low" | "medium" | "high";
+export type ReportMessageAuthorRole = "admin" | "tester";
 
 export interface UserProfile {
   id: string;
@@ -21,6 +22,38 @@ export interface ActiveTester {
   status: "online";
 }
 
+export interface TesterGameStat {
+  gameId: string;
+  gameTitle: string;
+  gameUrl: string;
+  sessionCount: number;
+  totalPlaySeconds: number;
+  reportsFiled: number;
+  lastPlayedAt: string | null;
+}
+
+export interface TesterInsight {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  lastSeen: string;
+  isOnline: boolean;
+  totalReports: number;
+  fixedReports: number;
+  openReports: number;
+  pendingReports: number;
+  highPriorityReports: number;
+  totalSessions: number;
+  gamesPlayedCount: number;
+  totalPlaySeconds: number;
+  avgSessionSeconds: number | null;
+  lastPlayedAt: string | null;
+  currentGameTitle: string | null;
+  currentSessionStartedAt: string | null;
+  games: TesterGameStat[];
+}
+
 export interface GameRecord {
   id: string;
   title: string;
@@ -30,12 +63,22 @@ export interface GameRecord {
   createdAt: string;
 }
 
+export interface ReportMessageRecord {
+  id: string;
+  body: string;
+  authorId: string;
+  authorName: string;
+  authorRole: ReportMessageAuthorRole;
+  createdAt: string;
+}
+
 export interface ReportRecord {
   id: string;
   timestamp: number;
   updatedAt: string;
-  image: string;
+  image: string | null;
   annotatedImage: string | null;
+  video: string | null;
   title: string;
   description: string;
   status: ReportStatus;
@@ -45,4 +88,5 @@ export interface ReportRecord {
   authorName: string;
   gameTitle: string | null;
   gameUrl: string | null;
+  messages: ReportMessageRecord[];
 }

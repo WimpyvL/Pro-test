@@ -1,17 +1,29 @@
 # Pro-test
 
-The Firebase and Gemini client-side wiring is gone. The app now uses:
+Pro-test is a game testing and bug reporting system with:
 
 - a React/Vite frontend in the repo root
-- an Encore TypeScript backend in `backend/`
-- SQL-backed users, sessions, games, and bug reports
-- Clerk for sign-in
+- an Encore TypeScript backend in [backend](C:\Git Repos\protest\backend)
+- Clerk authentication
+- SQL-backed games, users, sessions, and bug reports
+- tester/admin dashboards with report triage and feedback loops
 
-## Local development
+## Repo Layout
+
+```text
+protest/
+  backend/            Encore backend
+  public/             static frontend assets
+  src/                React frontend
+  docs/               deployment and operational guides
+```
+
+## Quickstart
 
 Prerequisites:
 
 - Node.js 20+
+- Docker
 - Encore CLI
 
 Frontend:
@@ -28,44 +40,68 @@ cd backend
 encore run
 ```
 
-Auth env:
+Frontend env:
 
 ```bash
-# frontend
 VITE_CLERK_PUBLISHABLE_KEY=pk_...
 VITE_API_BASE_URL=
+```
 
-# backend
+Backend env:
+
+```bash
 CLERK_SECRET_KEY=sk_...
 CORS_ALLOWED_ORIGINS=
 ```
 
-The Vite dev server proxies `/auth`, `/admin`, `/games`, and `/reports` to the Encore backend on `http://127.0.0.1:4000`.
+Local URLs:
 
-## Cloud backend shape
+- frontend: `http://127.0.0.1:3000`
+- backend: `http://127.0.0.1:4000`
+- Encore local dashboard: `http://127.0.0.1:9400`
 
-For production, stop depending on the Vite proxy.
+## Scripts
 
-You have two credible deployment modes:
+Frontend:
 
-1. Same-origin reverse proxy
-   - Frontend served from `https://yourdomain.com`
-   - Backend exposed behind a reverse proxy at `https://yourdomain.com/api`
-   - Set `VITE_API_BASE_URL=/api`
-   - Rewrite `/api/*` to the Encore backend and strip the `/api` prefix
-   - This is the cleanest option because the browser sees one origin
+- `npm run dev`
+- `npm run build`
+- `npm run lint`
 
-2. Split frontend/backend origins
-   - Frontend at `https://app.yourdomain.com`
-   - Backend at `https://api.yourdomain.com`
-   - Set `VITE_API_BASE_URL=https://api.yourdomain.com`
-   - Set backend `CORS_ALLOWED_ORIGINS=https://app.yourdomain.com`
+Backend:
 
-If you keep the frontend and backend on different origins, the backend now supports CORS preflight for Clerk bearer-token requests.
+- `encore run`
+- `encore check`
+- `npx tsc --noEmit`
 
-## Auth model
+## Auth Model
 
 - Clerk owns sign-in.
-- The Encore backend verifies Clerk bearer tokens and syncs the local app user row from Clerk user data.
+- The frontend sends Clerk bearer tokens to the backend.
+- The Encore backend verifies Clerk tokens and syncs the local user row.
 - The first synced user becomes `admin`.
 - Later users become `tester`.
+
+## Deployment
+
+See the full guide in [docs/DEPLOYMENT.md](C:\Git Repos\protest\docs\DEPLOYMENT.md).
+
+That guide covers:
+
+- Vercel frontend deployment
+- Encore Cloud backend deployment
+- required environment variables
+- CORS
+- same-origin vs split-origin setups
+- common failure modes
+
+## Current Recommendation
+
+For production, the cleanest setup is:
+
+- frontend on Vercel
+- backend on Encore Cloud
+- frontend configured with `VITE_API_BASE_URL`
+
+If you can keep frontend and backend on the same origin through a reverse proxy, do that.
+If not, use explicit CORS allowlists on the Encore side.
