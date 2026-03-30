@@ -72,16 +72,16 @@ export default function Sidebar({
       <motion.aside
         initial={false}
         animate={{ 
-          width: isOpen ? 280 : 0,
           x: isOpen ? 0 : -280
         }}
+        style={{ width: isOpen ? "min(280px, calc(100vw - 24px))" : 0 }}
         className={cn(
-          "fixed top-0 left-0 h-full bg-zinc-950 border-r border-zinc-800 z-50 flex flex-col overflow-hidden shadow-2xl transition-all lg:relative lg:translate-x-0",
+          "fixed top-0 left-0 h-[100dvh] bg-zinc-950 border-r border-zinc-800 z-50 flex flex-col overflow-hidden shadow-2xl transition-all lg:relative lg:translate-x-0",
           !isOpen && "lg:w-0 lg:border-none"
         )}
       >
         {/* Header */}
-        <div className="p-6 border-b border-zinc-900 flex items-center justify-between shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-900 p-4 shrink-0 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={accentStyle}>
               <Bug size={18} className="text-white" />
@@ -97,7 +97,7 @@ export default function Sidebar({
         </div>
 
         {/* User Profile / Account Space */}
-        <div className="p-6 border-b border-zinc-900 shrink-0">
+        <div className="border-b border-zinc-900 p-4 shrink-0 sm:p-6">
           {user ? (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -124,7 +124,7 @@ export default function Sidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1 sm:p-4">
           <div className="px-3 py-2">
             <h3 className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-4">Account Space</h3>
             <div className="space-y-1">
@@ -165,7 +165,7 @@ export default function Sidebar({
           </div>
 
           {isAdmin && (
-            <div className="px-3 py-6 mt-4 border-t border-zinc-900">
+            <div className="mt-4 border-t border-zinc-900 px-3 py-6">
               <h3 className="mb-4 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--tp-accent)" }}>Admin Console</h3>
               
               <div className="space-y-1 mb-6">
@@ -215,7 +215,7 @@ export default function Sidebar({
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-zinc-900 shrink-0">
+        <div className="border-t border-zinc-900 p-3 shrink-0 sm:p-4">
           <button 
             onClick={onLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400 hover:bg-red-500/10 font-medium text-sm transition-colors"

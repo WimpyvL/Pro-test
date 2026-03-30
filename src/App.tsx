@@ -30,7 +30,7 @@ const appHomeUrl = appBasePath ? `${appBasePath}/` : "/";
 export default function App() {
   if (!clerkPublishableKey) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950 p-6 text-white">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-950 p-4 text-white sm:p-6">
         <div className="w-full max-w-lg rounded-[32px] border border-zinc-800 bg-zinc-900/70 p-8 shadow-2xl">
           <h1 className="mb-4 text-3xl font-bold">Clerk is not configured</h1>
           <p className="text-sm text-zinc-400">
@@ -190,7 +190,7 @@ function AuthenticatedApp() {
 
   if (!isLoaded) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-950">
         <Loader2 className="animate-spin text-orange-500" size={48} />
       </div>
     );
@@ -198,7 +198,7 @@ function AuthenticatedApp() {
 
   if (!isSignedIn) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950 p-6 text-white">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-950 p-4 text-white sm:p-6">
         <div className="w-full max-w-md overflow-hidden rounded-[32px] border border-zinc-800 bg-zinc-900/70 p-6 shadow-2xl">
           <div className="mb-6">
             <h1 className="text-3xl font-bold">Tester Pro</h1>
@@ -224,14 +224,14 @@ function AuthenticatedApp() {
 
   if (!sessionUser) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-950">
         <Loader2 className="animate-spin text-orange-500" size={48} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-zinc-950 text-white">
+    <div className="flex min-h-[100dvh] w-full overflow-hidden bg-zinc-950 text-white">
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen((current) => !current)}
@@ -253,30 +253,30 @@ function AuthenticatedApp() {
       />
 
       <main className="relative flex-1 overflow-hidden">
-        <div className="absolute right-6 top-6 z-30">
+        <div className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6">
           <UserButton afterSignOutUrl={appHomeUrl} />
         </div>
         <AnimatePresence mode="wait">
           {activeView === "dashboard" && (
-            <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-8">
+            <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-4 pt-20 sm:p-8 sm:pt-8">
               <TesterDashboard reports={recentActivity} allReports={myReports} />
             </motion.div>
           )}
           {activeView === "admin-management" && sessionUser.role === "admin" && (
-            <motion.div key="admin-management" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-8">
+            <motion.div key="admin-management" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-4 pt-20 sm:p-8 sm:pt-8">
               <AdminDashboard activeTesters={activeTesters} testerInsights={testerInsights} games={games} bugs={reports} gameMetrics={gameMetrics} initialTab="management" onAddGame={handleAddGame} onDeleteGame={handleDeleteGame} onUpdateReport={handleUpdateReport} onCreateReportMessage={handleCreateReportMessage} />
             </motion.div>
           )}
           {activeView === "admin-analytics" && sessionUser.role === "admin" && (
-            <motion.div key="admin-analytics" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-8">
+            <motion.div key="admin-analytics" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-4 pt-20 sm:p-8 sm:pt-8">
               <AdminDashboard activeTesters={activeTesters} testerInsights={testerInsights} games={games} bugs={reports} gameMetrics={gameMetrics} initialTab="analytics" onAddGame={handleAddGame} onDeleteGame={handleDeleteGame} onUpdateReport={handleUpdateReport} onCreateReportMessage={handleCreateReportMessage} />
             </motion.div>
           )}
           {activeView === "games" && (
-            <motion.div key="games" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-8">
-              <div className="mb-8 flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Available Games</h1>
-                {sessionUser.role === "admin" && <button onClick={() => setActiveView("admin-management")} className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-zinc-800"><Plus size={18} />Manage Games</button>}
+            <motion.div key="games" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-4 pt-20 sm:p-8 sm:pt-8">
+              <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <h1 className="text-2xl font-bold sm:text-3xl">Available Games</h1>
+                {sessionUser.role === "admin" && <button onClick={() => setActiveView("admin-management")} className="flex items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-zinc-800 sm:px-6"><Plus size={18} />Manage Games</button>}
               </div>
               <GameList games={games} gameMetrics={gameMetrics} accentSoftStyle={accentSoftStyle} onSelectGame={(game) => { setSelectedGame(game); setActiveView("testing"); setIsSidebarOpen(false); }} />
             </motion.div>
@@ -287,7 +287,7 @@ function AuthenticatedApp() {
             </motion.div>
           )}
           {activeView === "settings" && (
-            <motion.div key="settings" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-8">
+            <motion.div key="settings" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="h-full overflow-y-auto p-4 pt-20 sm:p-8 sm:pt-8">
               <PersonalizationPanel user={sessionUser} preferences={preferences} setPreferences={setPreferences} accentStyle={accentStyle} accentSoftStyle={accentSoftStyle} />
             </motion.div>
           )}
@@ -303,18 +303,18 @@ function GameList({ games, gameMetrics, accentSoftStyle, onSelectGame }: { games
       {games.map((game) => {
         const metrics = gameMetrics[game.id] ?? emptyGameMetric();
         return (
-          <motion.div key={game.id} whileHover={{ y: -5 }} onClick={() => onSelectGame(game)} className="group cursor-pointer overflow-hidden rounded-[32px] border border-zinc-800 tp-panel">
+          <motion.div key={game.id} whileHover={{ y: -5 }} onClick={() => onSelectGame(game)} className="group cursor-pointer overflow-hidden rounded-[28px] border border-zinc-800 tp-panel sm:rounded-[32px]">
             <div className="relative aspect-video bg-zinc-800">
               {game.thumbnail ? <img src={game.thumbnail} alt={game.title} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-zinc-700"><Gamepad2 size={48} /></div>}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"><button className="rounded-full px-6 py-2 text-sm font-bold text-white" style={{ backgroundColor: "var(--tp-accent-strong)" }}>Start Testing</button></div>
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"><button className="rounded-full px-5 py-2 text-sm font-bold text-white sm:px-6" style={{ backgroundColor: "var(--tp-accent-strong)" }}>Start Testing</button></div>
             </div>
-            <div className="space-y-5 p-6">
-              <div className="flex items-start justify-between gap-4">
+            <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h3 className="mb-1 text-xl font-bold">{game.title}</h3>
+                  <h3 className="mb-1 text-lg font-bold sm:text-xl">{game.title}</h3>
                   <p className="line-clamp-2 text-sm text-zinc-500">{game.description}</p>
                 </div>
-                <span className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest" style={accentSoftStyle}>
+                <span className="w-fit rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest" style={accentSoftStyle}>
                   {metrics.totalReports} reports
                 </span>
               </div>
@@ -347,7 +347,7 @@ function TesterDashboard({ reports, allReports }: { reports: BugReport[]; allRep
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Tester Dashboard</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">Tester Dashboard</h1>
         <p className="mt-1 text-sm text-zinc-500">Track what you filed, what is being worked on, and what the admin sent back.</p>
       </div>
 
@@ -358,7 +358,7 @@ function TesterDashboard({ reports, allReports }: { reports: BugReport[]; allRep
       </div>
 
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.4fr_0.9fr]">
-        <div className="rounded-[32px] border border-zinc-800 bg-zinc-900/60 p-6">
+        <div className="rounded-[28px] border border-zinc-800 bg-zinc-900/60 p-4 sm:rounded-[32px] sm:p-6">
           <div className="mb-6 flex items-center gap-3">
             <div className="rounded-xl bg-orange-600/10 p-3 text-orange-500"><MessageSquareText size={20} /></div>
             <div>
@@ -396,7 +396,7 @@ function TesterDashboard({ reports, allReports }: { reports: BugReport[]; allRep
           )}
         </div>
 
-        <div className="rounded-[32px] border border-zinc-800 bg-zinc-900/60 p-6">
+        <div className="rounded-[28px] border border-zinc-800 bg-zinc-900/60 p-4 sm:rounded-[32px] sm:p-6">
           <h2 className="mb-6 text-xl font-bold">What Needs Your Attention</h2>
           <div className="space-y-3">
             {allReports.filter((report) => report.status !== "fixed").slice(0, 5).map((report) => (
@@ -496,22 +496,22 @@ function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetric
   }
   return (
     <div className="space-y-8">
-      <div><h1 className="text-3xl font-bold">{activeTab === "management" ? "Game Management" : "System Analytics"}</h1><p className="mt-1 text-sm text-zinc-500">{activeTab === "management" ? "Manage games and watch live tester activity." : "Real metrics from the Encore-backed reporting pipeline."}</p></div>
+      <div><h1 className="text-2xl font-bold sm:text-3xl">{activeTab === "management" ? "Game Management" : "System Analytics"}</h1><p className="mt-1 text-sm text-zinc-500">{activeTab === "management" ? "Manage games and watch live tester activity." : "Real metrics from the Encore-backed reporting pipeline."}</p></div>
       {activeTab === "management" ? (
         <div className="space-y-12">
           <section className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-xl font-bold">Bug Inbox</h2>
                 <p className="text-sm text-zinc-500">Triage reports, set priority, and send feedback back to the tester.</p>
               </div>
-              <div className="flex gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:flex">
                 <AnalyticsCard icon={<Bug size={20} />} label="Open" value={bugs.filter((bug) => bug.status === "open").length} accent="text-red-400" />
                 <AnalyticsCard icon={<Clock3 size={20} />} label="Pending" value={bugs.filter((bug) => bug.status === "pending").length} accent="text-amber-400" />
               </div>
             </div>
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.35fr]">
-              <div className="rounded-[32px] border border-zinc-800 bg-zinc-900 p-4">
+              <div className="rounded-[28px] border border-zinc-800 bg-zinc-900 p-3 sm:rounded-[32px] sm:p-4">
                 <div className="mb-4 px-2">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-500">Report Queue ({bugs.length})</h3>
                 </div>
@@ -531,10 +531,10 @@ function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetric
                 </div>
               </div>
 
-              <div className="rounded-[32px] border border-zinc-800 bg-zinc-900 p-6">
+              <div className="rounded-[28px] border border-zinc-800 bg-zinc-900 p-4 sm:rounded-[32px] sm:p-6">
                 {selectedBug ? (
                   <div className="space-y-6">
-                    <div className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
+                    <div className="grid gap-4 lg:gap-6 lg:grid-cols-[1fr_0.95fr]">
                       <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950">
                         {selectedBug.video ? (
                           <video src={selectedBug.video} className="aspect-video w-full object-contain" controls preload="metadata" />
@@ -565,7 +565,7 @@ function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetric
                       </div>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <FormField label="Status">
                         <select value={selectedBug.status} onChange={(e) => void saveBugUpdates({ status: e.target.value as BugReport["status"] })} className="w-full rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50">
                           <option value="open">Open</option>
@@ -602,7 +602,7 @@ function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetric
                       <FormField label="Reply">
                         <textarea value={draftReply} onChange={(e) => setDraftReply(e.target.value)} className="h-32 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" placeholder="Reply to the tester without overwriting the ticket." />
                       </FormField>
-                      <div className="flex justify-between gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
                         <button onClick={() => void saveBugUpdates({ adminNotes: draftAdminNotes })} disabled={isSavingBug} className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-3 text-sm font-bold text-zinc-300 disabled:opacity-70">
                           {isSavingBug ? "Saving..." : "Save Summary"}
                         </button>
@@ -619,7 +619,7 @@ function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetric
             </div>
           </section>
 
-          <div className="flex items-center justify-between"><h2 className="text-xl font-bold">Game Library</h2><button onClick={() => setIsAdding(true)} className="flex items-center gap-2 rounded-2xl bg-orange-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-orange-900/20"><Plus size={18} />Add New Game</button></div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><h2 className="text-xl font-bold">Game Library</h2><button onClick={() => setIsAdding(true)} className="flex items-center justify-center gap-2 rounded-2xl bg-orange-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-orange-900/20"><Plus size={18} />Add New Game</button></div>
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div className="space-y-12 lg:col-span-2">
               <section><h2 className="mb-6 text-sm font-bold uppercase tracking-widest text-zinc-500">Manage Games ({games.length})</h2><div className="space-y-4">{games.map((game) => { const metrics = gameMetrics[game.id] ?? emptyGameMetric(); return <div key={game.id} className="group rounded-3xl border border-zinc-800 bg-zinc-900 p-6"><div className="flex items-start justify-between gap-4"><div className="flex items-start gap-4"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-800 text-zinc-500"><Gamepad2 size={24} /></div><div><p className="font-bold">{game.title}</p><p className="max-w-[240px] truncate text-xs text-zinc-500">{game.url}</p><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"><MetricTile label="Reports" value={metrics.totalReports} accent="text-zinc-100" /><MetricTile label="Open" value={metrics.openReports} accent="text-red-400" /><MetricTile label="High" value={metrics.highPriorityReports} accent="text-orange-400" /><MetricTile label="Avg Fix" value={formatFixHours(metrics.avgFixHours)} accent="text-cyan-400" compact /></div></div></div><button onClick={() => void onDeleteGame(game.id)} className="rounded-xl p-3 text-zinc-600 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"><Trash2 size={18} /></button></div></div>; })}</div></section>
@@ -660,7 +660,7 @@ function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetric
                     ))}
                     {testerInsights.length === 0 && <div className="rounded-3xl border border-dashed border-zinc-800 bg-zinc-950 p-8 text-sm text-zinc-500">No tester telemetry yet. Once testers open games, this fills in.</div>}
                   </div>
-                  <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
+                  <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-6">
                     {selectedTester ? (
                       <div className="space-y-6">
                         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -674,13 +674,13 @@ function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetric
                             <p className="mt-1 text-sm text-zinc-200">{formatDateTime(selectedTester.lastSeen)}</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                           <MetricTile label="Total Play" value={formatPlayTime(selectedTester.totalPlaySeconds)} accent="text-cyan-400" compact />
                           <MetricTile label="Avg Session" value={formatPlayTime(selectedTester.avgSessionSeconds)} accent="text-blue-300" compact />
                           <MetricTile label="Open Bugs" value={selectedTester.openReports + selectedTester.pendingReports} accent="text-red-400" compact />
                           <MetricTile label="Fixed" value={selectedTester.fixedReports} accent="text-green-400" compact />
                         </div>
-                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                           <InlineInsight label="Sessions" value={selectedTester.totalSessions} />
                           <InlineInsight label="Games Played" value={selectedTester.gamesPlayedCount} />
                           <InlineInsight label="High Priority Filed" value={selectedTester.highPriorityReports} />
@@ -698,7 +698,7 @@ function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetric
                                   </div>
                                   <span className="text-xs text-zinc-500">{game.lastPlayedAt ? formatRelativeDate(game.lastPlayedAt) : "Never"}</span>
                                 </div>
-                                <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                                   <MetricTile label="Play Time" value={formatPlayTime(game.totalPlaySeconds)} accent="text-cyan-400" compact />
                                   <MetricTile label="Sessions" value={game.sessionCount} accent="text-zinc-100" compact />
                                   <MetricTile label="Reports" value={game.reportsFiled} accent="text-orange-400" compact />
@@ -741,19 +741,19 @@ function AdminDashboard({ activeTesters, testerInsights, games, bugs, gameMetric
           </div>
         </div>
       )}
-      <AnimatePresence>{isAdding && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-md"><motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="w-full max-w-lg overflow-hidden rounded-[32px] border border-zinc-800 bg-zinc-950 shadow-2xl"><div className="p-8"><h2 className="mb-6 text-2xl font-bold">Add New Game</h2><form onSubmit={submitGame} className="space-y-4"><FormField label="Game Title"><input type="text" required value={newGame.title} onChange={(e) => setNewGame((current) => ({ ...current, title: e.target.value }))} className="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" /></FormField><FormField label="Game URL"><input type="url" required value={newGame.url} onChange={(e) => setNewGame((current) => ({ ...current, url: e.target.value }))} className="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" /></FormField><FormField label="Description"><textarea value={newGame.description} onChange={(e) => setNewGame((current) => ({ ...current, description: e.target.value }))} className="h-24 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" /></FormField><div className="flex gap-3 pt-4"><button type="button" onClick={() => setIsAdding(false)} className="flex-1 rounded-xl bg-zinc-900 py-4 text-sm font-bold text-zinc-400">Cancel</button><button type="submit" disabled={isSavingGame} className="flex-1 rounded-xl bg-orange-600 py-4 text-sm font-bold text-white shadow-xl shadow-orange-900/20 disabled:opacity-70">{isSavingGame ? "Saving..." : "Save Game"}</button></div></form></div></motion.div></motion.div>}</AnimatePresence>
+      <AnimatePresence>{isAdding && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-0 backdrop-blur-md sm:items-center sm:p-6"><motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-[32px] border border-zinc-800 bg-zinc-950 shadow-2xl sm:max-h-[90vh] sm:max-w-lg sm:rounded-[32px]"><div className="overflow-y-auto p-5 sm:p-8"><h2 className="mb-6 text-2xl font-bold">Add New Game</h2><form onSubmit={submitGame} className="space-y-4"><FormField label="Game Title"><input type="text" required value={newGame.title} onChange={(e) => setNewGame((current) => ({ ...current, title: e.target.value }))} className="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" /></FormField><FormField label="Game URL"><input type="url" required value={newGame.url} onChange={(e) => setNewGame((current) => ({ ...current, url: e.target.value }))} className="w-full rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" /></FormField><FormField label="Description"><textarea value={newGame.description} onChange={(e) => setNewGame((current) => ({ ...current, description: e.target.value }))} className="h-24 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm outline-none focus:ring-2 focus:ring-orange-600/50" /></FormField><div className="flex flex-col gap-3 pt-4 sm:flex-row"><button type="button" onClick={() => setIsAdding(false)} className="flex-1 rounded-xl bg-zinc-900 py-4 text-sm font-bold text-zinc-400">Cancel</button><button type="submit" disabled={isSavingGame} className="flex-1 rounded-xl bg-orange-600 py-4 text-sm font-bold text-white shadow-xl shadow-orange-900/20 disabled:opacity-70">{isSavingGame ? "Saving..." : "Save Game"}</button></div></form></div></motion.div></motion.div>}</AnimatePresence>
     </div>
   );
 }
 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) { return <div><label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}</label>{children}</div>; }
-function HealthRow({ label, value, accent }: { label: string; value: string | number; accent?: string }) { return <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">{label}</span><span className={`font-bold ${accent ?? ""}`}>{value}</span></div>; }
-function AnalyticsCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string | number; accent: string }) { return <div className="rounded-3xl border border-zinc-800 p-6 tp-panel"><div className="mb-4 flex items-center gap-3"><div className={`rounded-lg bg-white/5 p-2 ${accent}`}>{icon}</div><h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">{label}</h3></div><p className={`text-4xl font-bold ${accent}`}>{value}</p></div>; }
-function ChartCard({ title, icon, children, className }: { title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }) { return <div className={`rounded-[32px] border border-zinc-800 p-8 tp-panel ${className ?? ""}`}><h3 className="mb-8 flex items-center gap-2 text-lg font-bold">{icon}{title}</h3><div className="h-[300px] w-full">{children}</div></div>; }
+function HealthRow({ label, value, accent }: { label: string; value: string | number; accent?: string }) { return <div className="flex items-center justify-between gap-3"><span className="text-sm text-zinc-400">{label}</span><span className={`text-right font-bold ${accent ?? ""}`}>{value}</span></div>; }
+function AnalyticsCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string | number; accent: string }) { return <div className="rounded-3xl border border-zinc-800 p-4 tp-panel sm:p-6"><div className="mb-4 flex items-start gap-3"><div className={`rounded-lg bg-white/5 p-2 ${accent}`}>{icon}</div><h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 sm:text-sm">{label}</h3></div><p className={`text-3xl font-bold sm:text-4xl ${accent}`}>{value}</p></div>; }
+function ChartCard({ title, icon, children, className }: { title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }) { return <div className={`rounded-[28px] border border-zinc-800 p-4 tp-panel sm:rounded-[32px] sm:p-8 ${className ?? ""}`}><h3 className="mb-6 flex items-center gap-2 text-base font-bold sm:mb-8 sm:text-lg">{icon}{title}</h3><div className="h-[240px] w-full sm:h-[300px]">{children}</div></div>; }
 function StatusBadge({ status }: { status: BugReport["status"] }) { return <span className={cn("rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest", status === "open" ? "bg-red-500/15 text-red-300" : status === "pending" ? "bg-amber-500/15 text-amber-300" : "bg-green-500/15 text-green-300")}>{status}</span>; }
 function PriorityBadge({ priority }: { priority: ReportPriority }) { return <span className={cn("rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest", priority === "high" ? "bg-red-500/15 text-red-300" : priority === "medium" ? "bg-orange-500/15 text-orange-300" : "bg-blue-500/15 text-blue-300")}>{priority}</span>; }
-function MetricTile({ label, value, accent, compact = false }: { label: string; value: string | number; accent: string; compact?: boolean }) { return <div className={cn("rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3", compact && "px-3 py-2")}><p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}</p><p className={cn("mt-2 text-2xl font-bold", compact && "text-lg", accent)}>{value}</p></div>; }
-function InlineInsight({ label, value }: { label: string; value: string | number }) { return <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}</p><p className="mt-2 text-sm font-semibold text-zinc-200">{value}</p></div>; }
+function MetricTile({ label, value, accent, compact = false }: { label: string; value: string | number; accent: string; compact?: boolean }) { return <div className={cn("rounded-2xl border border-zinc-800 bg-zinc-950 px-3 py-3 sm:px-4", compact && "px-3 py-2")}><p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}</p><p className={cn("mt-2 break-words text-xl font-bold sm:text-2xl", compact && "text-base sm:text-lg", accent)}>{value}</p></div>; }
+function InlineInsight({ label, value }: { label: string; value: string | number }) { return <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{label}</p><p className="mt-2 break-words text-sm font-semibold text-zinc-200">{value}</p></div>; }
 
 function PersonalizationPanel({ user, preferences, setPreferences, accentStyle, accentSoftStyle }: { user: UserProfile; preferences: UiPreferences; setPreferences: React.Dispatch<React.SetStateAction<UiPreferences>>; accentStyle: React.CSSProperties; accentSoftStyle: React.CSSProperties; }) {
   return (

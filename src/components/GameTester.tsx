@@ -389,7 +389,7 @@ export default function GameTester({
   }
 
   return (
-    <div className="relative h-screen w-full select-none overflow-hidden bg-black">
+    <div className="relative h-[100dvh] w-full select-none overflow-hidden bg-black">
       <iframe src={gameUrl} className="h-full w-full border-none" title="Game View" allow="camera; microphone; geolocation" />
 
       <motion.button
@@ -442,15 +442,15 @@ export default function GameTester({
         {isComposerOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeOverlays} className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 24, scale: 0.98 }} className="fixed inset-x-4 bottom-4 z-50 mx-auto w-full max-w-2xl overflow-hidden rounded-[32px] border border-zinc-800 bg-zinc-950 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+            <motion.div initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 24, scale: 0.98 }} className="fixed inset-0 z-50 mx-auto flex w-full max-w-none flex-col overflow-hidden rounded-none border-zinc-800 bg-zinc-950 shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:inset-x-4 sm:bottom-4 sm:top-auto sm:max-w-2xl sm:rounded-[32px] sm:border">
               <form onSubmit={submitQuickReport} className="flex max-h-[88vh] flex-col">
-                <div className="flex items-start justify-between border-b border-zinc-900 px-6 py-5">
+                <div className="flex flex-col gap-4 border-b border-zinc-900 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:py-5">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-orange-400">Quick Report</p>
-                    <h2 className="mt-2 text-2xl font-bold">Report a bug without leaving the game</h2>
+                    <h2 className="mt-2 text-xl font-bold sm:text-2xl">Report a bug without leaving the game</h2>
                     <p className="mt-1 text-sm text-zinc-500">{gameTitle}</p>
                   </div>
-                  <div className="ml-4 flex items-center gap-2">
+                  <div className="flex flex-col gap-2 sm:ml-4 sm:flex-row sm:items-center">
                     <button type="button" onClick={() => openHistory()} className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-bold uppercase tracking-widest text-zinc-300">
                       My Reports
                     </button>
@@ -460,7 +460,7 @@ export default function GameTester({
                   </div>
                 </div>
 
-                <div className="space-y-6 overflow-y-auto px-6 py-6">
+                <div className="space-y-5 overflow-y-auto px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6">
                   <div className="grid gap-4 md:grid-cols-2">
                     <FormSection label="Short title" hint="Keep it human. One line is enough.">
                       <input
@@ -558,9 +558,9 @@ export default function GameTester({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 border-t border-zinc-900 px-6 py-5">
+                <div className="flex flex-col gap-3 border-t border-zinc-900 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
                   <p className="text-xs text-zinc-500">Required fields: title and what happened.</p>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row">
                     <button type="button" onClick={() => setComposerDraft(emptyComposerDraft())} className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
                       Reset
                     </button>
@@ -580,14 +580,14 @@ export default function GameTester({
         {isHistoryOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeOverlays} className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 24, scale: 0.98 }} className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-[32px] border border-zinc-800 bg-zinc-950 shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
-              <div className="flex items-center justify-between border-b border-zinc-900 px-6 py-5">
+            <motion.div initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 24, scale: 0.98 }} className="fixed inset-0 z-50 mx-auto flex max-h-[100dvh] w-full max-w-none flex-col overflow-hidden rounded-none border-zinc-800 bg-zinc-950 shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:inset-x-4 sm:bottom-4 sm:top-auto sm:max-h-[90vh] sm:max-w-6xl sm:rounded-[32px] sm:border">
+              <div className="flex flex-col gap-4 border-b border-zinc-900 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-orange-400">My Reports</p>
-                  <h2 className="mt-2 text-2xl font-bold">{gameTitle}</h2>
+                  <h2 className="mt-2 text-xl font-bold sm:text-2xl">{gameTitle}</h2>
                   <p className="mt-1 text-sm text-zinc-500">Browse what you already filed without polluting the report flow.</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <button type="button" onClick={openComposer} className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-bold uppercase tracking-widest text-zinc-300">
                     New Report
                   </button>
@@ -598,7 +598,7 @@ export default function GameTester({
               </div>
 
               <div className="grid flex-1 overflow-hidden xl:grid-cols-[360px_1fr]">
-                <div className="overflow-y-auto border-b border-zinc-900 p-4 xl:border-b-0 xl:border-r">
+                <div className="overflow-y-auto border-b border-zinc-900 p-3 sm:p-4 xl:border-b-0 xl:border-r">
                   <div className="space-y-3">
                     {gameReports.map((report) => {
                       const preview = report.annotatedImage || report.image;
@@ -642,7 +642,7 @@ export default function GameTester({
                   </div>
                 </div>
 
-                <div className="overflow-y-auto p-6">
+                <div className="overflow-y-auto p-4 sm:p-6">
                   {activeReport && editorDraft ? (
                     <div className="space-y-6">
                       <button type="button" onClick={() => setActiveReportId(null)} className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 xl:hidden">
@@ -650,7 +650,7 @@ export default function GameTester({
                         Back to list
                       </button>
 
-                      <div className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
+                      <div className="grid gap-4 lg:gap-6 lg:grid-cols-[1fr_0.95fr]">
                         <ReportPreview image={activeReportPreview} video={activeReport.video} />
                         <div className="space-y-4">
                           <div className="flex flex-wrap items-center gap-2">
@@ -707,7 +707,7 @@ export default function GameTester({
                             <div>Updated {new Date(activeReport.updatedAt).toLocaleString()}</div>
                           </div>
 
-                          <div className="flex flex-wrap justify-between gap-3">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-between">
                             {canEditActiveReport ? (
                               <button type="button" onClick={() => void saveReportEdits()} disabled={isSavingReport} className="flex items-center gap-2 rounded-2xl bg-orange-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-950/30 disabled:opacity-60">
                                 {isSavingReport ? <Loader2 size={16} className="animate-spin" /> : <Pencil size={16} />}

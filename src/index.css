@@ -20,12 +20,21 @@ html[data-ui-surface="glass"] {
 }
 
 @layer base {
+  html {
+    height: 100%;
+  }
+
   body {
     @apply text-zinc-100;
+    min-height: 100dvh;
     background:
       radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 30%),
       linear-gradient(180deg, #09090b 0%, #050507 100%);
     transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  #root {
+    min-height: 100dvh;
   }
 
   html[data-ui-density="compact"] body {
